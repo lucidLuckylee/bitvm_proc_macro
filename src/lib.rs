@@ -2,14 +2,14 @@
 extern crate proc_macro;
 use proc_macro::TokenStream;
 use quote::quote;
-use syn::{Lit, Ident};
+use syn::{Expr, Ident, Lit, Stmt};
 
 #[proc_macro]
 pub fn make_opcode(input: TokenStream) -> TokenStream {
     // Parse the input token stream into a literal
-    //let input = parse_macro_input!(input as Lit);
     let input_clone = input.clone();
     let input_clone_2 = input.clone();
+    let input_clone_3 = input.clone();
     let opcode_quote = match syn::parse::<Lit>(input) {
         Ok(lit) => match lit {
         Lit::Int(literal) => {
@@ -32,6 +32,8 @@ pub fn make_opcode(input: TokenStream) -> TokenStream {
         _ => return input_clone,
         },
 
+                
+        // TODO: Check if the value is a function (find out if function is statement or Ident)
         Err(_) => match syn::parse::<Ident>(input_clone) {
             Ok(identifier) => {
                 if identifier.to_string().starts_with("OP_") {
@@ -45,7 +47,14 @@ pub fn make_opcode(input: TokenStream) -> TokenStream {
                 }
 
             },
-            Err(_) => return input_clone_2,
+            Err(_) =>  match syn::parse::<Expr>(input_clone_2) {
+            Ok(expression) => {
+                    quote! {
+                        Opcode::Value(#expression)
+                    }
+            },
+            Err(_) => return input_clone_3,
+        }
         }
     };
 
